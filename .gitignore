@@ -1,0 +1,7 @@
+
+!/.installed.cfg
+!/eggs/
+!/bin/
+!/parts/
+!/develop-eggs/
+!/src/pyams_site.egg-info/

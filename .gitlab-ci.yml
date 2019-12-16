@@ -1,0 +1,96 @@
+image: python:3.5
+
+stages:
+    - test
+    - dist
+    - quality
+
+cache:
+    paths:
+        - bin/
+        - eggs/
+        - parts/
+
+before_script:
+    - /bin/ping -W 1 -c 1 172.17.0.1 && export http_proxy=http://172.17.0.1:3128/
+    - /bin/ping -W 1 -c 1 172.17.0.1 && export HTTP_PROXY=http://172.17.0.1:3128/
+    - /bin/ping -W 1 -c 1 172.17.0.1 && export https_proxy=http://172.17.0.1:3128/
+    - /bin/ping -W 1 -c 1 172.17.0.1 && export HTTPS_PROXY=http://172.17.0.1:3128/
+
+bootstrap:
+    stage: .pre
+    script:
+        - python3.5 bootstrap.py --buildout-version=2.12.0
+        - ./bin/buildout
+
+test:
+    stage: test
+    script:
+        - pip install anybadge
+        - mkdir ./coverage
+        - ./bin/test --coverage coverage | tee ./coverage/coverage.log
+        - GLOBAL_COVER=$(grep -e '^[[:space:]]*[[:digit:]]\+[[:space:]]\+[[:digit:]]\+\%' ./coverage/coverage.log |
+              awk 'BEGIN { lines=0; cov=0 }
+                   { lines = lines + $1; cov = cov + $1 * $2 / 100 }
+                   END { printf "%.2f", cov / lines * 100 }')
+        - anybadge --label=Coverage --file=./coverage/coverage.svg --value=$GLOBAL_COVER coverage
+        - echo "Global tests coverage is $GLOBAL_COVER %"
+    artifacts:
+        paths:
+            - ./coverage/
+
+dist:
+    stage: dist
+    script:
+        - ./bin/buildout setup setup.py clean --all sdist bdist_egg bdist_wheel
+    artifacts:
+        paths:
+            - ./dist
+
+pylint:
+    stage: quality
+    allow_failure: true
+    script:
+        - pip install pylint-exit anybadge
+        - mkdir ./pylint
+        - ./bin/pylint src/pyams_site/ | tee ./pylint/pylint.log || pylint-exit $?
+        - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
+        - anybadge --label=Pylint --file=./pylint/pylint.svg --value=$PYLINT_SCORE pylint
+        - echo "Pylint score is $PYLINT_SCORE"
+    artifacts:
+        paths:
+            - ./pylint/
+
+quality:
+    stage: quality
+    allow_failure: true
+    image: docker:stable
+    services:
+        - docker:stable-dind
+    variables:
+        DOCKER_DRIVER: overlay2
+        DOCKER_TLS_CERTDIR: ""
+    script:
+        - |
+            if ! docker info &>/dev/null; then
+              if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
+                export DOCKER_HOST='tcp://localhost:2375'
+              fi
+            fi
+        - docker run
+            --env SOURCE_CODE="$PWD"
+            --volume "$PWD":/code
+            --volume /var/run/docker.sock:/var/run/docker.sock
+            "registry.gitlab.com/gitlab-org/security-products/codequality:12-0-stable" /code
+    artifacts:
+        reports:
+            codequality: gl-code-quality-report.json
+        expire_in: 1 week
+    dependencies: []
+    only:
+        refs:
+            - branches
+            - tags
+    except:
+        variables:
+            - $CODE_QUALITY_DISABLED
