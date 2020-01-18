@@ -23,21 +23,21 @@ bootstrap:
         - python3.5 bootstrap.py --buildout-version=2.12.0
         - ./bin/buildout
 
-test:
+test-3.5:
     stage: test
     script:
-        - pip install anybadge
+        - pip install anybadge coverage
         - mkdir ./coverage
-        - ./bin/test --coverage coverage | tee ./coverage/coverage.log
-        - GLOBAL_COVER=$(grep -e '^[[:space:]]*[[:digit:]]\+[[:space:]]\+[[:digit:]]\+\%' ./coverage/coverage.log |
-              awk 'BEGIN { lines=0; cov=0 }
-                   { lines = lines + $1; cov = cov + $1 * $2 / 100 }
-                   END { printf "%.2f", cov / lines * 100 }')
+        - coverage erase
+        - coverage run ./bin/test | tee ./coverage/coverage.log
+        - coverage xml
+        - GLOBAL_COVER=$(coverage report | grep TOTAL | awk '{print $4}' | cut -d '%' -f 1)
         - anybadge --label=Coverage --file=./coverage/coverage.svg --value=$GLOBAL_COVER coverage
         - echo "Global tests coverage is $GLOBAL_COVER %"
     artifacts:
         paths:
             - ./coverage/
+            - coverage.xml
 
 dist:
     stage: dist
@@ -60,6 +60,24 @@ pylint:
     artifacts:
         paths:
             - ./pylint/
+
+coverage:
+    stage: quality
+    allow_failure: true
+    image:
+        name: sonarsource/sonar-scanner-cli:latest
+        entrypoint: [""]
+    variables:
+        SONAR_URL: http://sonar.dev-dsm.onf.fr
+        SONAR_HOST_URL: http://sonar.dev-dsm.onf.fr
+    script:
+        - sonar-scanner -Dsonar.qualitygate.wait=true
+    only:
+        - merge_requests
+        - master
+    except:
+        variables:
+            - $CODE_COVERAGE_DISABLED
 
 quality:
     stage: quality
