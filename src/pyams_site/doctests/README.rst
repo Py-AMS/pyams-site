@@ -9,7 +9,7 @@ Site factory
 This package is composed of a set of utility functions, usable into any Pyramid application.
 
     >>> from pyramid.testing import setUp, tearDown, DummyRequest
-    >>> config = setUp()
+    >>> config = setUp(hook_zca=True)
     >>> config.registry.settings['zodbconn.uri'] = 'memory://'
 
     >>> from pyramid_zodbconn import includeme as include_zodbconn
@@ -73,6 +73,20 @@ when several levels of upgrades are required, the utility knows which ones to ap
     >>> from pyams_site.interfaces import SITE_GENERATIONS_KEY
     >>> IAnnotations(app).get(SITE_GENERATIONS_KEY)
     {'PyAMS timezone': 1}
+
+
+PyAMS upgrade script
+--------------------
+
+Sometimes, we don't want automatic database upgrade; the "pyams_upgrade" command line script
+can then be used to apply database upgrades on request; it takes the Pyramid configuration
+file as argument:
+
+    >>> from pyams_site.scripts import pyams_upgrade_cmd
+    >>> pyams_upgrade_cmd()
+    Traceback (most recent call last):
+    ...
+    SystemExit: 2
 
 
 Tests cleanup:
