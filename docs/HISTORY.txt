@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.1
+-----
+ - replaced hooks with local registry setting
+ - updated doctests
+
 1.0.0
 -----
  - initial release
