@@ -17,13 +17,13 @@ zodbupdate classes renaming rules.
 """
 
 from persistent.mapping import PersistentMapping
-from zope.component import hooks
 from zope.lifecycleevent import ObjectCreatedEvent
 
 from pyams_site.interfaces import ISiteGenerations, SITE_GENERATIONS_KEY
 from pyams_site.site import site_factory
 from pyams_utils.adapter import get_annotation_adapter
-from pyams_utils.registry import get_current_registry, get_utilities_for, query_utility
+from pyams_utils.registry import get_current_registry, get_utilities_for, query_utility, \
+    set_local_registry
 
 
 __docformat__ = 'restructuredtext'
@@ -41,7 +41,7 @@ def upgrade_site(request):
     application = site_factory(request)
     if application is not None:
         try:
-            hooks.setSite(application)
+            set_local_registry(application.getSiteManager())
             generations = get_annotation_adapter(application, SITE_GENERATIONS_KEY,
                                                  PersistentMapping, notify=False, locate=False)
             for name, utility in sorted(get_utilities_for(ISiteGenerations),
@@ -57,7 +57,7 @@ def upgrade_site(request):
                 utility.evolve(application, current)
                 generations[name] = utility.generation
         finally:
-            hooks.setSite(None)
+            set_local_registry(None)
         import transaction  # pylint: disable=import-outside-toplevel
         transaction.commit()
     return application

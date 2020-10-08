@@ -20,7 +20,6 @@ from pyramid.exceptions import NotFound
 from pyramid.path import DottedNameResolver
 from pyramid.security import ALL_PERMISSIONS, Allow, Everyone
 from pyramid_zodbconn import get_connection
-from zope.component import hooks
 from zope.component.interfaces import IPossibleSite
 from zope.interface import implementer
 from zope.site import LocalSiteManager
@@ -31,7 +30,7 @@ from pyams_site.interfaces import IConfigurationManager, ISiteRoot, ISiteRootFac
     NewLocalSiteCreatedEvent, PYAMS_APPLICATION_DEFAULT_NAME, PYAMS_APPLICATION_FACTORY_KEY, \
     PYAMS_APPLICATION_SETTINGS_KEY
 from pyams_utils.adapter import ContextAdapter, adapter_config
-from pyams_utils.registry import get_current_registry
+from pyams_utils.registry import get_current_registry, set_local_registry
 
 
 __docformat__ = 'restructuredtext'
@@ -98,10 +97,10 @@ def site_factory(request):
             # if some components require a valid and complete registry
             # with all registered utilities, they can subscribe to
             # INewLocalSiteCreatedEvent event interface
-            hooks.setSite(application)
+            set_local_registry(application.getSiteManager())
             get_current_registry().notify(NewLocalSiteCreatedEvent(application))
         finally:
-            hooks.setSite(None)
+            set_local_registry(None)
         import transaction  # pylint: disable=import-outside-toplevel
         transaction.commit()
     return application
