@@ -10,8 +10,9 @@
 # FOR A PARTICULAR PURPOSE.
 #
 
-"""PyAMS_*** module
+"""PyAMS_site.generations.timezone module
 
+This module provides timezone utility checker.
 """
 
 from pyams_site.generations import check_required_utilities

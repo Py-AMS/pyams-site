@@ -10,8 +10,9 @@
 # FOR A PARTICULAR PURPOSE.
 #
 
-"""PyAMS_*** module
+"""PyAMS_site.generations.zodbupdate module
 
+This module provides ZODB classes update rules for previous PyAMS releases.
 """
 
 __docformat__ = 'restructuredtext'
