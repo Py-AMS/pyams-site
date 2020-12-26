@@ -89,6 +89,34 @@ file as argument:
     SystemExit: 2
 
 
+Site "++etc++" traverser
+------------------------
+
+The "++etc++" traverser can be used to provides custom traversers for contents which support
+the `ISiteEtcTraverser`:
+
+    >>> from pyams_utils.adapter import adapter_config
+    >>> from pyams_utils.testing import call_decorator
+
+    >>> from zope.traversing.interfaces import ITraversable
+    >>> from pyams_site.interfaces import ISiteRoot, ISiteEtcTraverser
+    >>> from pyams_site.site import SiteRootEtcTraverser, site_root_site_traverser
+    >>> call_decorator(config, adapter_config, SiteRootEtcTraverser, name='etc',
+    ...                required=ISiteRoot, provides=ITraversable)
+    >>> call_decorator(config, adapter_config, site_root_site_traverser, name='site',
+    ...                required=ISiteRoot, provides=ISiteEtcTraverser)
+
+    >>> from zope.component import getAdapter
+    >>> traverser = getAdapter(app, ITraversable, name='etc')
+    >>> traverser.traverse('site')
+    <LocalSiteManager ++etc++site>
+
+    >>> traverser.traverse('unknown')
+    Traceback (most recent call last):
+    ...
+    pyramid.httpexceptions.HTTPNotFound: The resource could not be found.
+
+
 Tests cleanup:
 
     >>> tearDown()
