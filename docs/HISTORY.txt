@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.1.0
+-----
+ - added ISiteEtcTraverser interface to handle custom traversing to local site manager
+ - updated doctests
+
 1.0.1
 -----
  - replaced hooks with local registry setting
