@@ -20,15 +20,16 @@ from pyramid.exceptions import NotFound
 from pyramid.path import DottedNameResolver
 from pyramid.security import ALL_PERMISSIONS, Allow, Everyone
 from pyramid_zodbconn import get_connection
+from zope.component import queryAdapter
 from zope.component.interfaces import IPossibleSite
 from zope.interface import implementer
 from zope.site import LocalSiteManager
 from zope.site.folder import Folder
 from zope.traversing.interfaces import ITraversable
 
-from pyams_site.interfaces import IConfigurationManager, ISiteRoot, ISiteRootFactory, \
-    NewLocalSiteCreatedEvent, PYAMS_APPLICATION_DEFAULT_NAME, PYAMS_APPLICATION_FACTORY_KEY, \
-    PYAMS_APPLICATION_SETTINGS_KEY
+from pyams_site.interfaces import IConfigurationManager, ISiteEtcTraverser, ISiteRoot, \
+    ISiteRootFactory, NewLocalSiteCreatedEvent, PYAMS_APPLICATION_DEFAULT_NAME, \
+    PYAMS_APPLICATION_FACTORY_KEY, PYAMS_APPLICATION_SETTINGS_KEY
 from pyams_utils.adapter import ContextAdapter, adapter_config
 from pyams_utils.registry import get_current_registry, set_local_registry
 
@@ -55,7 +56,7 @@ class BaseSiteRoot(Folder):
     config_klass = None
 
 
-@adapter_config(name='etc', context=ISiteRoot, provides=ITraversable)
+@adapter_config(name='etc', required=ISiteRoot, provides=ITraversable)
 class SiteRootEtcTraverser(ContextAdapter):
     """Site root ++etc++ namespace traverser
 
@@ -65,9 +66,16 @@ class SiteRootEtcTraverser(ContextAdapter):
     def traverse(self, name, furtherpath=None):  # pylint: disable=unused-argument
         """Traverse to site manager;
         see :py:class:`ITraversable <zope.traversing.interfaces.ITraversable>`"""
-        if name == 'site':
-            return self.context.getSiteManager()
+        extension = queryAdapter(self.context, ISiteEtcTraverser, name=name)
+        if extension is not None:
+            return extension
         raise NotFound
+
+
+@adapter_config(name='site', required=ISiteRoot, provides=ISiteEtcTraverser)
+def site_root_site_traverser(context):
+    """Site root ++etc++site traverser extension"""
+    return context.getSiteManager()
 
 
 def site_factory(request):

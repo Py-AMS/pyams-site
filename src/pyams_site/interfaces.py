@@ -46,6 +46,10 @@ class NewLocalSiteCreatedEvent(ObjectEvent):
     """New local site creation event"""
 
 
+class ISiteEtcTraverser(Interface):
+    """Site ++etc++ traverser extension interface"""
+
+
 class IConfigurationManager(Interface):
     """Configuration manager marker interface"""
 
