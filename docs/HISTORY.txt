@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.2.0
+-----
+ - updated site generations manager upgrade tool, using registered objects factories so
+   that required utilities can be defined only by their interface
+ - removed Travis-CI configuration
+
 1.1.0
 -----
  - added ISiteEtcTraverser interface to handle custom traversing to local site manager
