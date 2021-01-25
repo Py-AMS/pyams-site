@@ -22,6 +22,7 @@ from zope.lifecycleevent import ObjectCreatedEvent
 from pyams_site.interfaces import ISiteGenerations, SITE_GENERATIONS_KEY
 from pyams_site.site import site_factory
 from pyams_utils.adapter import get_annotation_adapter
+from pyams_utils.factory import get_object_factory
 from pyams_utils.registry import get_current_registry, get_utilities_for, query_utility, \
     set_local_registry
 
@@ -84,6 +85,8 @@ def check_required_utilities(site, utilities):
             lsm = site.getSiteManager()
             if default_id in lsm:
                 continue
+            if factory is None:
+                factory = get_object_factory(interface)
             utility = factory()
             registry.notify(ObjectCreatedEvent(utility))
             lsm[default_id] = utility
